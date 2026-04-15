@@ -59,4 +59,15 @@ public class ExamRecordController {
     public Result<Map<String, Object>> getExamStats(@PathVariable Long examId) {
         return Result.success(recordService.getExamStats(examId));
     }
+
+    /**
+     * 教师手动调整简答题分数
+     */
+    @PutMapping("/answer/{answerId}/score")
+    public Result<Void> updateAnswerScore(
+            @PathVariable Long answerId,
+            @RequestParam Integer score) {
+        recordService.updateAnswerScore(answerId, score);
+        return Result.success();
+    }
 }

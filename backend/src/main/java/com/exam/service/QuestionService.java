@@ -64,6 +64,8 @@ public class QuestionService {
         question.setExamId(dto.getExamId());
         question.setType(dto.getType());
         question.setContent(dto.getContent());
+        question.setReferenceAnswer(dto.getReferenceAnswer());
+        question.setKeywords(dto.getKeywords());
         question.setScore(dto.getScore());
         question.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
         questionMapper.insert(question);
@@ -105,6 +107,8 @@ public class QuestionService {
 
         question.setType(dto.getType());
         question.setContent(dto.getContent());
+        question.setReferenceAnswer(dto.getReferenceAnswer());
+        question.setKeywords(dto.getKeywords());
         question.setScore(dto.getScore());
         question.setSortOrder(dto.getSortOrder());
         questionMapper.updateById(question);

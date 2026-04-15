@@ -51,6 +51,8 @@ CREATE TABLE `question` (
     `exam_id` BIGINT NOT NULL,
     `type` TINYINT NOT NULL DEFAULT 1,
     `content` TEXT NOT NULL,
+    `reference_answer` TEXT COMMENT '简答题参考答案',
+    `keywords` VARCHAR(500) COMMENT '简答题关键词，多个用逗号分隔',
     `score` INT NOT NULL DEFAULT 5,
     `sort_order` INT NOT NULL DEFAULT 0,
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
