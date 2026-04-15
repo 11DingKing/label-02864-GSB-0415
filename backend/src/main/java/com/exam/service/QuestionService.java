@@ -40,8 +40,10 @@ public class QuestionService {
             );
             
             if (!includeAnswer) {
-                // 学生答题时不返回正确答案
+                // 学生答题时不返回正确答案、参考答案和关键词
                 options.forEach(opt -> opt.setIsCorrect(null));
+                question.setReferenceAnswer(null);
+                question.setKeywords(null);
             }
             question.setOptions(options);
         }
