@@ -66,6 +66,8 @@ public class QuestionService {
         question.setContent(dto.getContent());
         question.setScore(dto.getScore());
         question.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
+        question.setReferenceAnswer(dto.getReferenceAnswer());
+        question.setKeywords(dto.getKeywords());
         questionMapper.insert(question);
 
         if (dto.getOptions() != null) {
@@ -107,6 +109,8 @@ public class QuestionService {
         question.setContent(dto.getContent());
         question.setScore(dto.getScore());
         question.setSortOrder(dto.getSortOrder());
+        question.setReferenceAnswer(dto.getReferenceAnswer());
+        question.setKeywords(dto.getKeywords());
         questionMapper.updateById(question);
 
         // 删除旧选项

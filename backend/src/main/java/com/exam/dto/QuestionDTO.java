@@ -25,6 +25,10 @@ public class QuestionDTO {
     
     private List<OptionDTO> options;
     
+    private String referenceAnswer;
+    
+    private String keywords;
+    
     @Data
     public static class OptionDTO {
         private Long id;
