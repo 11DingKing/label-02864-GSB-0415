@@ -107,7 +107,7 @@ public class ExamRecordService {
                     int autoScore = calculateEssayScore(question, userAnswer);
                     answerRecord.setAutoScore(autoScore);
                     answerRecord.setScore(autoScore);
-                    answerRecord.setIsCorrect(autoScore.equals(question.getScore()) ? 1 : 0);
+                    answerRecord.setIsCorrect(autoScore == question.getScore() ? 1 : 0);
                     totalScore += autoScore;
                 } else {
                     // 选择题处理
