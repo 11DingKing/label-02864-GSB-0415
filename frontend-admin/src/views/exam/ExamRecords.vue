@@ -59,6 +59,28 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="操作" min-width="120" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.status === 2"
+              type="primary"
+              link
+              size="small"
+              @click="$router.push(`/record/${row.id}/grade`)"
+            >
+              批改
+            </el-button>
+            <el-button
+              v-if="row.status === 3"
+              type="info"
+              link
+              size="small"
+              @click="$router.push(`/record/${row.id}/grade`)"
+            >
+              查看
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
       
       <div class="pagination">
@@ -76,11 +98,12 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getExamById } from '../../api/exam'
 import { getExamRecords, getExamStats } from '../../api/record'
 
 const route = useRoute()
+const router = useRouter()
 const examId = route.params.id
 
 const exam = ref(null)
@@ -124,7 +147,9 @@ const formatTime = (time) => {
 }
 
 const getStatusText = (row) => {
-  if (row.status === 2) return '已完成'
+  if (row.status === 1) return '已提交'
+  if (row.status === 2) return '待批改'
+  if (row.status === 3) return '已完成'
   // 检查是否超过考试时间
   if (exam.value?.endTime) {
     const endTime = new Date(exam.value.endTime)
@@ -140,8 +165,10 @@ const getStatusText = (row) => {
 }
 
 const getStatusType = (row) => {
+  if (row.status === 1) return 'info'
+  if (row.status === 2) return 'warning'
+  if (row.status === 3) return 'success'
   const text = getStatusText(row)
-  if (text === '已完成') return 'success'
   if (text === '未提交') return 'danger'
   return 'warning'
 }

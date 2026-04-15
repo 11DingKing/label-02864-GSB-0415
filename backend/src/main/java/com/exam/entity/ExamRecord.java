@@ -12,7 +12,7 @@ public class ExamRecord {
     private Long examId;
     private Long userId;
     private Integer totalScore;
-    private Integer status; // 0-进行中, 1-已提交, 2-已批改
+    private Integer status; // 0-进行中, 1-已提交, 2-待人工评分, 3-已完成
     private LocalDateTime startTime;
     private LocalDateTime submitTime;
     private LocalDateTime createTime;

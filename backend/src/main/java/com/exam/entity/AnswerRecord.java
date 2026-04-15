@@ -13,4 +13,7 @@ public class AnswerRecord {
     private String answer;
     private Integer isCorrect;
     private Integer score;
+    private Integer autoScore;
+    private Integer finalScore;
+    private String teacherComment;
 }

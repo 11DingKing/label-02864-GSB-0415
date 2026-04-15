@@ -11,7 +11,7 @@ public class Question {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long examId;
-    private Integer type; // 1-单选, 2-多选, 3-判断
+    private Integer type; // 1-单选, 2-多选, 3-判断, 4-简答
     private String content;
     private Integer score;
     private Integer sortOrder;
@@ -19,6 +19,9 @@ public class Question {
     private LocalDateTime updateTime;
     @TableLogic
     private Integer deleted;
+    
+    private String referenceAnswer;
+    private String keywords;
     
     @TableField(exist = false)
     private List<QuestionOption> options;
