@@ -18,6 +18,10 @@ public class QuestionDTO {
     @NotBlank(message = "题目内容不能为空")
     private String content;
     
+    private String referenceAnswer; // 简答题参考答案
+    
+    private String keywords; // 简答题关键词，多个用逗号分隔
+    
     @NotNull(message = "分值不能为空")
     private Integer score;
     
