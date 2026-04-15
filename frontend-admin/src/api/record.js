@@ -7,3 +7,5 @@ export const getExamStats = (examId) => request.get(`/record/exam/${examId}/stat
 export const getRecordDetail = (id) => request.get(`/record/${id}/detail`)
 
 export const getAnswers = (id) => request.get(`/record/${id}/answers`)
+
+export const gradeEssay = (data) => request.post('/record/grade', data)

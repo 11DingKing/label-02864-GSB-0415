@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.exam.common.BusinessException;
+import com.exam.dto.GradeEssayDTO;
 import com.exam.dto.SubmitExamDTO;
 import com.exam.entity.*;
 import com.exam.mapper.AnswerRecordMapper;
@@ -84,6 +85,7 @@ public class ExamRecordService {
                 .collect(Collectors.toMap(Question::getId, q -> q));
 
         int totalScore = 0;
+        boolean hasEssayQuestion = false;
 
         // 处理每道题的答案
         if (dto.getAnswers() != null) {
@@ -91,48 +93,90 @@ public class ExamRecordService {
                 Question question = questionMap.get(answerDto.getQuestionId());
                 if (question == null) continue;
 
-                // 获取正确答案
-                List<QuestionOption> correctOptions = optionMapper.selectList(
-                        new LambdaQueryWrapper<QuestionOption>()
-                                .eq(QuestionOption::getQuestionId, question.getId())
-                                .eq(QuestionOption::getIsCorrect, 1)
-                );
-
-                String correctAnswer = correctOptions.stream()
-                        .map(QuestionOption::getOptionKey)
-                        .sorted()
-                        .collect(Collectors.joining(","));
-
-                String userAnswer = answerDto.getAnswer() != null ? 
-                        answerDto.getAnswer().toUpperCase() : "";
-                
-                // 对用户答案排序（处理多选题）
-                String sortedUserAnswer = userAnswer.isEmpty() ? "" :
-                        java.util.Arrays.stream(userAnswer.split(","))
-                                .sorted()
-                                .collect(Collectors.joining(","));
-
-                boolean isCorrect = correctAnswer.equals(sortedUserAnswer);
-                int score = isCorrect ? question.getScore() : 0;
-                totalScore += score;
-
                 AnswerRecord answerRecord = new AnswerRecord();
                 answerRecord.setRecordId(record.getId());
                 answerRecord.setQuestionId(question.getId());
-                answerRecord.setAnswer(userAnswer);
-                answerRecord.setIsCorrect(isCorrect ? 1 : 0);
-                answerRecord.setScore(score);
+
+                if (question.getType() == 4) {
+                    // 简答题处理
+                    hasEssayQuestion = true;
+                    String userAnswer = answerDto.getAnswer() != null ? answerDto.getAnswer() : "";
+                    answerRecord.setAnswer(userAnswer);
+                    
+                    // 根据关键词自动评分
+                    int autoScore = calculateEssayScore(question, userAnswer);
+                    answerRecord.setScore(autoScore);
+                    answerRecord.setIsCorrect(null); // 简答题不判断对错
+                    totalScore += autoScore;
+                } else {
+                    // 选择题处理
+                    List<QuestionOption> correctOptions = optionMapper.selectList(
+                            new LambdaQueryWrapper<QuestionOption>()
+                                    .eq(QuestionOption::getQuestionId, question.getId())
+                                    .eq(QuestionOption::getIsCorrect, 1)
+                    );
+
+                    String correctAnswer = correctOptions.stream()
+                            .map(QuestionOption::getOptionKey)
+                            .sorted()
+                            .collect(Collectors.joining(","));
+
+                    String userAnswer = answerDto.getAnswer() != null ? 
+                            answerDto.getAnswer().toUpperCase() : "";
+                    
+                    // 对用户答案排序（处理多选题）
+                    String sortedUserAnswer = userAnswer.isEmpty() ? "" :
+                            java.util.Arrays.stream(userAnswer.split(","))
+                                    .sorted()
+                                    .collect(Collectors.joining(","));
+
+                    boolean isCorrect = correctAnswer.equals(sortedUserAnswer);
+                    int score = isCorrect ? question.getScore() : 0;
+                    totalScore += score;
+
+                    answerRecord.setAnswer(userAnswer);
+                    answerRecord.setIsCorrect(isCorrect ? 1 : 0);
+                    answerRecord.setScore(score);
+                }
+
                 answerMapper.insert(answerRecord);
             }
         }
 
         record.setTotalScore(totalScore);
-        record.setStatus(2); // 已批改
+        record.setStatus(hasEssayQuestion ? 1 : 2); // 1-待批改, 2-已批改
         record.setSubmitTime(LocalDateTime.now());
         recordMapper.updateById(record);
 
         log.info("学生[{}]提交考试[{}], 得分: {}", UserContext.getUserId(), record.getExamId(), totalScore);
         return record;
+    }
+
+    private int calculateEssayScore(Question question, String userAnswer) {
+        if (userAnswer == null || userAnswer.isEmpty()) {
+            return 0;
+        }
+        
+        String keywordsStr = question.getKeywords();
+        if (keywordsStr == null || keywordsStr.isEmpty()) {
+            return 0;
+        }
+
+        String[] keywords = keywordsStr.split(",");
+        if (keywords.length == 0) {
+            return 0;
+        }
+
+        int hitCount = 0;
+        String lowerAnswer = userAnswer.toLowerCase();
+        for (String keyword : keywords) {
+            if (lowerAnswer.contains(keyword.trim().toLowerCase())) {
+                hitCount++;
+            }
+        }
+
+        double scorePerKeyword = (double) question.getScore() / keywords.length;
+        return (int) (hitCount * scorePerKeyword);
     }
 
     public IPage<ExamRecord> getMyRecords(int page, int size) {
@@ -174,5 +218,53 @@ public class ExamRecordService {
             throw new BusinessException("无权查看此考试统计");
         }
         return recordMapper.selectStatsByExamId(examId, exam.getPassScore());
+    }
+
+    @Transactional
+    public ExamRecord gradeEssay(GradeEssayDTO dto) {
+        ExamRecord record = recordMapper.selectById(dto.getRecordId());
+        if (record == null) {
+            throw new BusinessException("考试记录不存在");
+        }
+
+        Exam exam = examService.getExamById(record.getExamId());
+        if (!exam.getCreatorId().equals(UserContext.getUserId())) {
+            throw new BusinessException("无权批改此考试");
+        }
+
+        if (record.getStatus() != 1) {
+            throw new BusinessException("考试状态不是待批改");
+        }
+
+        int totalScore = 0;
+        List<AnswerRecord> allAnswers = answerMapper.selectList(
+                new LambdaQueryWrapper<AnswerRecord>()
+                        .eq(AnswerRecord::getRecordId, record.getId())
+        );
+
+        Map<Long, AnswerRecord> answerMap = allAnswers.stream()
+                .collect(Collectors.toMap(AnswerRecord::getId, a -> a));
+
+        if (dto.getGrades() != null) {
+            for (GradeEssayDTO.EssayGradeDTO gradeDTO : dto.getGrades()) {
+                AnswerRecord answerRecord = answerMap.get(gradeDTO.getAnswerRecordId());
+                if (answerRecord == null) {
+                    continue;
+                }
+                answerRecord.setScore(gradeDTO.getScore());
+                answerMapper.updateById(answerRecord);
+            }
+        }
+
+        for (AnswerRecord answer : allAnswers) {
+            totalScore += answer.getScore() != null ? answer.getScore() : 0;
+        }
+
+        record.setTotalScore(totalScore);
+        record.setStatus(2);
+        recordMapper.updateById(record);
+
+        log.info("教师[{}]批改考试记录[{}], 最终得分: {}", UserContext.getUserId(), record.getId(), totalScore);
+        return record;
     }
 }

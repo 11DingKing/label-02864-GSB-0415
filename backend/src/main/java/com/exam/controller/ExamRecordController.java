@@ -2,6 +2,7 @@ package com.exam.controller;
 
 import com.exam.common.PageResult;
 import com.exam.common.Result;
+import com.exam.dto.GradeEssayDTO;
 import com.exam.dto.SubmitExamDTO;
 import com.exam.entity.AnswerRecord;
 import com.exam.entity.ExamRecord;
@@ -58,5 +59,10 @@ public class ExamRecordController {
     @GetMapping("/exam/{examId}/stats")
     public Result<Map<String, Object>> getExamStats(@PathVariable Long examId) {
         return Result.success(recordService.getExamStats(examId));
+    }
+
+    @PostMapping("/grade")
+    public Result<ExamRecord> gradeEssay(@Valid @RequestBody GradeEssayDTO dto) {
+        return Result.success(recordService.gradeEssay(dto));
     }
 }

@@ -33,17 +33,20 @@ public class QuestionService {
         );
 
         for (Question question : questions) {
-            List<QuestionOption> options = optionMapper.selectList(
-                    new LambdaQueryWrapper<QuestionOption>()
-                            .eq(QuestionOption::getQuestionId, question.getId())
-                            .orderByAsc(QuestionOption::getSortOrder)
-            );
-            
-            if (!includeAnswer) {
-                // 学生答题时不返回正确答案
-                options.forEach(opt -> opt.setIsCorrect(null));
+            // 简答题不需要选项
+            if (question.getType() != 4) {
+                List<QuestionOption> options = optionMapper.selectList(
+                        new LambdaQueryWrapper<QuestionOption>()
+                                .eq(QuestionOption::getQuestionId, question.getId())
+                                .orderByAsc(QuestionOption::getSortOrder)
+                );
+                
+                if (!includeAnswer) {
+                    // 学生答题时不返回正确答案
+                    options.forEach(opt -> opt.setIsCorrect(null));
+                }
+                question.setOptions(options);
             }
-            question.setOptions(options);
         }
 
         return questions;
@@ -66,9 +69,11 @@ public class QuestionService {
         question.setContent(dto.getContent());
         question.setScore(dto.getScore());
         question.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
+        question.setReferenceAnswer(dto.getReferenceAnswer());
+        question.setKeywords(dto.getKeywords());
         questionMapper.insert(question);
 
-        if (dto.getOptions() != null) {
+        if (dto.getType() != 4 && dto.getOptions() != null) {
             for (QuestionDTO.OptionDTO optDto : dto.getOptions()) {
                 QuestionOption option = new QuestionOption();
                 option.setQuestionId(question.getId());
@@ -107,6 +112,8 @@ public class QuestionService {
         question.setContent(dto.getContent());
         question.setScore(dto.getScore());
         question.setSortOrder(dto.getSortOrder());
+        question.setReferenceAnswer(dto.getReferenceAnswer());
+        question.setKeywords(dto.getKeywords());
         questionMapper.updateById(question);
 
         // 删除旧选项
@@ -115,8 +122,8 @@ public class QuestionService {
                         .eq(QuestionOption::getQuestionId, id)
         );
 
-        // 添加新选项
-        if (dto.getOptions() != null) {
+        // 添加新选项（简答题不需要选项）
+        if (dto.getType() != 4 && dto.getOptions() != null) {
             for (QuestionDTO.OptionDTO optDto : dto.getOptions()) {
                 QuestionOption option = new QuestionOption();
                 option.setQuestionId(id);
