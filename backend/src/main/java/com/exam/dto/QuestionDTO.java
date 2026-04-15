@@ -23,6 +23,10 @@ public class QuestionDTO {
     
     private Integer sortOrder;
     
+    private String referenceAnswer;
+    
+    private String keywords;
+    
     private List<OptionDTO> options;
     
     @Data

@@ -37,6 +37,11 @@ const routes = [
         component: () => import('../views/exam/ExamRecords.vue')
       },
       {
+        path: 'exam/:examId/grade/:recordId',
+        name: 'GradeEssay',
+        component: () => import('../views/exam/GradeEssay.vue')
+      },
+      {
         path: 'student',
         name: 'StudentList',
         component: () => import('../views/student/StudentList.vue')
